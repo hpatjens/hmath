@@ -1,6 +1,7 @@
-#[macro_use] extern crate num_traits;
+extern crate num_traits;
 
 mod vector;
+mod vector_tests;
 mod traits;
 
 pub use vector::*;

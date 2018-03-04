@@ -1,13 +1,11 @@
-use std::ops::{Add,AddAssign,Sub,SubAssign,Mul,MulAssign,Div,DivAssign,Neg};
-use num_traits::{Num,Zero,One};
+use std::ops::{AddAssign,SubAssign,MulAssign,DivAssign};
+use num_traits::Num;
 use num_traits::float::Float;
 
 pub trait Base
-    : Sized 
-    + Copy 
-    + Zero 
-    + One 
-    + AddAssign 
+    : Num
+    + Copy
+    + AddAssign
     + SubAssign
     + MulAssign
     + DivAssign
