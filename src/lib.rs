@@ -6,5 +6,3 @@ mod traits;
 
 pub use vector::*;
 pub use traits::*;
-
-

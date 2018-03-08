@@ -9,142 +9,273 @@ macro_rules! implement_binary_assign_operator {
             $body:expr
         }
     ) => {
-        impl<T> $operator_trait<$type_rhs> for $type
-            where T: Base + $operator_trait<T>
-        {
+        // val
+        impl<T> $operator_trait<$type_rhs> for $type where T: Base {
             fn $function(&mut self, other: $type_rhs) {
-                let ($lhs, $rhs) = (self, other);
-                $body
+                let ($lhs, $rhs) = (self, other); $body
+            }
+        }
+
+        // &val
+        impl<'a, T> $operator_trait<&'a $type_rhs> for $type where T: Base {
+            fn $function(&mut self, other: &'a $type_rhs) {
+                let ($lhs, $rhs) = (self, *other); $body
+            }
+        }
+
+        // &mut val
+        impl<'a, T> $operator_trait<&'a mut $type_rhs> for $type where T: Base {
+            fn $function(&mut self, other: &'a mut $type_rhs) {
+                let ($lhs, $rhs) = (self, *other); $body
             }
         }
     }
 }
 
+macro_rules! implement_unary_operator {
+    // With simple constraint
+    ($operator_trait:ident for $type:ty where T: $contraint_trait:ident,
+        fn $function:ident($self:ident) -> $result_type:ty {
+            $body:expr
+        }
+    ) => {
+        impl<T> $operator_trait for $type where T: Base + $contraint_trait {
+            type Output = $type;
+            #[inline]
+            fn $function(self) -> $type { let $self = self; $body }
+        }
+
+        impl<'a, T> $operator_trait for &'a $type where T: Base + $contraint_trait {
+            type Output = $type;
+            #[inline]
+            fn $function(self) -> $type { let $self = self; $body }
+        }
+
+        impl<'a, T> $operator_trait for &'a mut $type where T: Base + $contraint_trait {
+            type Output = $type;
+            #[inline]
+            fn $function(self) -> $type { let $self = self; $body }
+        }
+    };
+    // With constraint that defines "Output"
+    ($operator_trait:ident for $type:ty where T: $contraint_trait:ident<Output=T>,
+        fn $function:ident($self:ident) -> $result_type:ty {
+            $body:expr
+        }
+    ) => {
+        impl<T> $operator_trait for $type where T: Base + $contraint_trait<Output=T> {
+            type Output = $type;
+            #[inline]
+            fn $function(self) -> $type { let $self = self; $body }
+        }
+
+        impl<'a, T> $operator_trait for &'a $type where T: Base + $contraint_trait<Output=T> {
+            type Output = $type;
+            #[inline]
+            fn $function(self) -> $type { let $self = self; $body }
+        }
+
+        impl<'a, T> $operator_trait for &'a mut $type where T: Base + $contraint_trait<Output=T> {
+            type Output = $type;
+            #[inline]
+            fn $function(self) -> $type { let $self = self; $body }
+        }
+    }
+}
+ 
 macro_rules! implement_binary_operator {
     ($operator_trait:ident<$type_rhs:ty> for $type:ty,
         fn $function:ident($lhs:ident, $rhs:ident) -> $result_type:ty {
             $body:expr
         }
     ) => {
-        //
-        // IMPLEMENT OPERATOR FOR TYPE WITHOUT REFERENCE
-        //
-        impl<T> $operator_trait<$type_rhs> for $type
-            where T: Base + $operator_trait<Output=T>
-        {
+        // self op other
+        impl<T> $operator_trait<$type_rhs> for $type where T: Base {
             type Output = $result_type;
+            #[inline] 
+            fn $function(self, other: $type_rhs) -> $result_type {
+                let ($lhs, $rhs) = (self, other); $body
+            }
+        }
 
+        // self op &other
+        impl<'b, T> $operator_trait<&'b $type_rhs> for $type where T: Base {
+            type Output = $result_type;
+            #[inline]
+            fn $function(self, other: &'b $type_rhs) -> $result_type {
+                let ($lhs, $rhs) = (self, *other); $body
+            }
+        }
+
+        // self op &mut other
+        impl<'b, T> $operator_trait<&'b mut $type_rhs> for $type where T: Base {
+            type Output = $result_type;
+            #[inline]
+            fn $function(self, other: &'b mut $type_rhs) -> $result_type {
+                let ($lhs, $rhs) = (self, *other); $body
+            }
+        }
+
+        // &self op other
+        impl<'a, T> $operator_trait<$type_rhs> for &'a $type where T: Base {
+            type Output = $result_type;
             #[inline]
             fn $function(self, other: $type_rhs) -> $result_type {
-                let ($lhs, $rhs) = (self, other);
-                $body
+                let ($lhs, $rhs) = (*self, other); $body
             }
         }
 
-        //
-        // IMPLEMENT OPERATOR FOR TYPE WITH REFERENCE
-        //
-        impl<'a, T> $operator_trait<&'a $type_rhs> for &'a $type
-            where T: Base + $operator_trait<Output=T>
-        {
+        // &self op &other
+        impl<'a, T> $operator_trait<&'a $type_rhs> for &'a $type where T: Base {
             type Output = $result_type;
-
             #[inline]
             fn $function(self, other: &'a $type_rhs) -> $result_type {
-                let ($lhs, $rhs) = (*self, *other);
-                $body
+                let ($lhs, $rhs) = (*self, *other); $body
             }
         }
 
-        //
-        // IMPLEMENT OPERATOR FOR TYPE WITH REFERENCE ON RHS
-        //
-        impl<'a, T> $operator_trait<&'a $type_rhs> for $type
-            where T: Base + $operator_trait<Output=T>
-        {
+        // &self op &mut other
+        impl<'a, T> $operator_trait<&'a mut $type_rhs> for &'a $type where T: Base {
             type Output = $result_type;
-
             #[inline]
-            fn $function(self, other: &'a $type_rhs) -> $result_type {
-                let ($lhs, $rhs) = (self, *other);
-                $body
+            fn $function(self, other: &'a mut $type_rhs) -> $result_type {
+                let ($lhs, $rhs) = (*self, *other); $body
             }
         }
 
-        //
-        // IMPLEMENT OPERATOR FOR TYPE WITH REFERENCE ON LHS
-        //
-        impl<'a, T> $operator_trait<$type_rhs> for &'a $type
-            where T: Base + $operator_trait<Output=T>
-        {
+        // &mut self op other
+        impl<'a, T> $operator_trait<$type_rhs> for &'a mut $type where T: Base {
             type Output = $result_type;
-
             #[inline]
             fn $function(self, other: $type_rhs) -> $result_type {
-                let ($lhs, $rhs) = (*self, other);
-                $body
+                let ($lhs, $rhs) = (*self, other); $body
+            }
+        }
+
+        // &mut self op &other
+        impl<'a, 'b, T> $operator_trait<&'b $type_rhs> for &'a mut $type where T: Base {
+            type Output = $result_type;
+            #[inline]
+            fn $function(self, other: &'b $type_rhs) -> $result_type {
+                let ($lhs, $rhs) = (*self, *other); $body
+            }
+        }
+
+        // &mut self op &mut other
+        impl<'a, 'b, T> $operator_trait<&'b mut $type_rhs> for &'a mut $type where T: Base {
+            type Output = $result_type;
+            #[inline]
+            fn $function(self, other: &'b mut $type_rhs) -> $result_type {
+                let ($lhs, $rhs) = (*self, *other); $body
             }
         }
     }
 }
 
-macro_rules! implement_binary_operator_specific {
+macro_rules! implement_binary_operator_non_generic {
     ($operator_trait:ident<$type_rhs:ty> for $type:ty,
         fn $function:ident($lhs:ident, $rhs:ident) -> $result_type:ty {
             $body:expr
         }
     ) => {
-        //
-        // IMPLEMENT OPERATOR FOR TYPE WITHOUT REFERENCE
-        //
+        // self op other
         impl $operator_trait<$type_rhs> for $type {
             type Output = $result_type;
-
             #[inline]
             fn $function(self, other: $type_rhs) -> $result_type {
-                let ($lhs, $rhs) = (self, other);
-                $body
+                let ($lhs, $rhs) = (self, other); $body
             }
         }
 
-        //
-        // IMPLEMENT OPERATOR FOR TYPE WITH REFERENCE
-        //
-        impl<'a> $operator_trait<&'a $type_rhs> for &'a $type {
+        // self op &other
+        impl<'b> $operator_trait<&'b $type_rhs> for $type {
             type Output = $result_type;
-
             #[inline]
-            fn $function(self, other: &'a $type_rhs) -> $result_type {
-                let ($lhs, $rhs) = (*self, *other);
-                $body
+            fn $function(self, other: &'b $type_rhs) -> $result_type {
+                let ($lhs, $rhs) = (self, *other); $body
             }
         }
 
-        //
-        // IMPLEMENT OPERATOR FOR TYPE WITH REFERENCE ON RHS
-        //
-        impl<'a> $operator_trait<&'a $type_rhs> for $type {
+        // self op &mut other
+        impl<'b> $operator_trait<&'b mut $type_rhs> for $type {
             type Output = $result_type;
-
             #[inline]
-            fn $function(self, other: &'a $type_rhs) -> $result_type {
-                let ($lhs, $rhs) = (self, *other);
-                $body
+            fn $function(self, other: &'b mut $type_rhs) -> $result_type {
+                let ($lhs, $rhs) = (self, *other); $body
             }
         }
 
-        //
-        // IMPLEMENT OPERATOR FOR TYPE WITH REFERENCE ON LHS
-        //
+        // &self op other
         impl<'a> $operator_trait<$type_rhs> for &'a $type {
             type Output = $result_type;
-
             #[inline]
             fn $function(self, other: $type_rhs) -> $result_type {
-                let ($lhs, $rhs) = (*self, other);
-                $body
+                let ($lhs, $rhs) = (*self, other); $body
             }
         }
+
+        // &self op &other
+        impl<'a, 'b> $operator_trait<&'b $type_rhs> for &'a $type {
+            type Output = $result_type;
+            #[inline]
+            fn $function(self, other: &'b $type_rhs) -> $result_type {
+                let ($lhs, $rhs) = (*self, *other); $body
+            }
+        }
+
+        // &self op &mut other
+        impl<'a, 'b> $operator_trait<&'b mut $type_rhs> for &'a $type {
+            type Output = $result_type;
+            #[inline]
+            fn $function(self, other: &'b mut $type_rhs) -> $result_type {
+                let ($lhs, $rhs) = (*self, *other); $body
+            }
+        }
+
+        // &mut self op other
+        impl<'a> $operator_trait<$type_rhs> for &'a mut $type {
+            type Output = $result_type;
+            #[inline]
+            fn $function(self, other: $type_rhs) -> $result_type {
+                let ($lhs, $rhs) = (*self, other); $body
+            }
+        }
+
+        // &mut self op &other
+        impl<'a, 'b> $operator_trait<&'b $type_rhs> for &'a mut $type {
+            type Output = $result_type;
+            #[inline]
+            fn $function(self, other: &'b $type_rhs) -> $result_type {
+                let ($lhs, $rhs) = (*self, *other); $body
+            }
+        }
+
+        // &mut self op &mut other
+        impl<'a, 'b> $operator_trait<&'b mut $type_rhs> for &'a mut $type {
+            type Output = $result_type;
+            #[inline]
+            fn $function(self, other: &'b mut $type_rhs) -> $result_type {
+                let ($lhs, $rhs) = (*self, *other); $body
+            }
+        }
+    }
+}
+
+macro_rules! implement_specific_operators_for_vector {
+    ($type:ident { $($member:ident),+ } for $specific_type:ty) => {
+        // s * v
+        implement_binary_operator_non_generic!(Mul<$type<$specific_type>> for $specific_type,
+            fn mul(scalar, vector) -> $type<$specific_type> {
+                $type::new( $(scalar * vector.$member),* )
+            }
+        );
+
+        // s / v
+        implement_binary_operator_non_generic!(Div<$type<$specific_type>> for $specific_type,
+            fn div(scalar, vector) -> $type<$specific_type> {
+                $type::new( $(scalar / vector.$member),* )
+            }
+        );
     }
 }
 
@@ -154,22 +285,16 @@ macro_rules! implement_vector {
         // DEFINE THE TYPE
         //
         #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
-        pub struct $type<T>
-            where T: Base
-        {
+        pub struct $type<T> where T: Base {
             $($member: T),*
         }
 
         //
         // IMPLEMENTATION WHEN BASE TRAIT
         //
-        impl<T> $type<T> 
-            where T: Base
-        {
+        impl<T: Base> $type<T>  {
             pub fn new($($member: T),*) -> Self {
-                $type {
-                    $($member: $member),*
-                }
+                $type { $($member: $member),* }
             }
 
             #[inline]
@@ -181,43 +306,12 @@ macro_rules! implement_vector {
 
             #[inline]
             pub fn zero() -> Self {
-                $type {
-                    $($member: T::zero()),*
-                }
+                $type { $($member: T::zero()),* }
             }
 
             #[inline]
             pub fn one() -> Self {
-                $type {
-                    $($member: T::one()),*
-                }
-            }
-
-            #[inline]
-            pub fn cw_min(&self, other: Self) -> Self
-                where T: PartialOrd
-            {
-                $type::new(
-                    $(if self.$member < other.$member { self.$member } else { other.$member }),*
-                )
-            }
-
-            #[inline]
-            pub fn cw_max(&self, other: Self) -> Self 
-                where T: PartialOrd
-            {
-                $type::new(
-                    $(if other.$member < self.$member { other.$member } else { self.$member }),*
-                )
-            }
-
-            #[inline]
-            pub fn cw_abs(&self) -> Self 
-                where T: Signed
-            {
-                $type::new(
-                    $(self.$member.abs()),*
-                )
+                $type { $($member: T::one()),* }
             }
         }
 
@@ -253,21 +347,6 @@ macro_rules! implement_vector {
             fn default() -> Self {
                 $type::new(
                     $({ let $member = T::zero(); $member }),*
-                )
-            }
-        }
-
-        //
-        // NEGATE OPERATOR
-        //
-        impl<T> Neg for $type<T> 
-            where T: Base + Neg<Output=T>
-        {
-            type Output = $type<T>;
-
-            fn neg(self) -> $type<T> {
-                $type::new(
-                    $(-self.$member),*
                 )
             }
         }
@@ -360,17 +439,61 @@ macro_rules! implement_vector {
             }}
         );
 
+        // --------------------------------------------------------------------------
+        // Own traits
+        // --------------------------------------------------------------------------
 
+        // v cw_min v
+        implement_binary_operator!(CwMin<$type<T>> for $type<T>,
+            fn cw_min(lhs, rhs) -> $type<T> {
+                $type::new( $(if lhs.$member < rhs.$member { lhs.$member } else { rhs.$member }),* )
+            }
+        );
 
+        // v cw_max v
+        implement_binary_operator!(CwMax<$type<T>> for $type<T>,
+            fn cw_max(lhs, rhs) -> $type<T> {
+                $type::new( $(if rhs.$member < lhs.$member { lhs.$member } else { rhs.$member }),* )
+            }
+        );
 
+        // v dot v
+        implement_binary_operator!(Dot<$type<T>> for $type<T>,
+            fn dot(lhs, rhs) -> T {{
+                let mut sum = T::zero();
+                $(sum += lhs.$member * rhs.$member;)*
+                sum
+            }}
+        );
 
-        implement_binary_operator_specific!(Mul<$type<f32>> for f32,
-            fn mul(scalar, vector) -> $type<f32> {
+        implement_unary_operator!(Neg for $type<T> where T: Neg<Output=T>,
+            fn neg(this) -> $type<T> {
                 $type::new(
-                    $(vector.$member * scalar),*
+                    $(-this.$member),*
                 )
             }
         );
+
+        implement_unary_operator!(CwAbs for $type<T> where T: Signed,
+            fn cw_abs(this) -> $type<T> {
+                $type::new( $(this.$member.abs()),* )
+            }
+        );
+
+        // --------------------------------------------------------------------------
+        // Operators that cannot be implemented generically
+        // --------------------------------------------------------------------------
+
+        implement_specific_operators_for_vector!($type { $($member),* } for i8 );
+        implement_specific_operators_for_vector!($type { $($member),* } for i16);
+        implement_specific_operators_for_vector!($type { $($member),* } for i32);
+        implement_specific_operators_for_vector!($type { $($member),* } for i64);
+        implement_specific_operators_for_vector!($type { $($member),* } for u8 );
+        implement_specific_operators_for_vector!($type { $($member),* } for u16);
+        implement_specific_operators_for_vector!($type { $($member),* } for u32);
+        implement_specific_operators_for_vector!($type { $($member),* } for u64);
+        implement_specific_operators_for_vector!($type { $($member),* } for f32);
+        implement_specific_operators_for_vector!($type { $($member),* } for f64);
     }
 }
 
@@ -378,17 +501,12 @@ implement_vector!(Vector2 { x, y });
 implement_vector!(Vector3 { x, y, z });
 implement_vector!(Vector4 { x, y, z, w });
 
-
-impl<T> Vector3<T> 
-    where T: Base + Sub<Output=T> + Mul<T, Output=T>
-{
-    #[inline]
-    pub fn cross(&self, other: &Vector3<T>) -> Vector3<T> {
-        let (a, b) = (self, other);
+implement_binary_operator!(Cross<Vector3<T>> for Vector3<T>,
+    fn cross(a, b) -> Vector3<T> {
         Vector3::new(
             a.y*b.z - a.z*b.y,
             a.z*b.x - a.x*b.z,
             a.x*b.y - a.y*b.x,
         )
     }
-}
+);
