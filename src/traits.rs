@@ -1,6 +1,7 @@
 use std::ops::{AddAssign,SubAssign,MulAssign,DivAssign};
 use num_traits::Num;
 use num_traits::float::Float;
+use float_cmp::{ApproxEq,Ulps};
 
 pub trait Base
     : Num
@@ -17,6 +18,8 @@ pub trait Base
 pub trait BaseFloat
     : Base
     + Float
+    + ApproxEq
+    + Ulps
 {
 }
 

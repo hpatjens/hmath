@@ -4,6 +4,8 @@ use std::mem;
 use traits::*;
 use vector::*;
 
+pub use float_cmp::{Ulps,ApproxEq};
+
 macro_rules! implement_one_to_one_assign_method {
     (fn $method_name:ident -> $type:ident { $($member:ident),* }) => {
         pub fn $method_name($($member: T),*) -> Self {
@@ -116,6 +118,7 @@ macro_rules! implement_matrix {
             }
         );
 
+        // m * v
         implement_binary_operator!(Mul<$vector_type<T>> for $matrix_type<T>,
             fn mul(lhs, rhs) -> $vector_type<T> {
                 $vector_type::new(
@@ -213,6 +216,16 @@ macro_rules! implement_matrix {
             }
         }
 
+        impl<T: BaseFloat> ApproxEq for $matrix_type<T> 
+            where T: ApproxEq<Flt=T>
+        {
+            type Flt = T;
+            #[inline]
+            fn approx_eq(&self, other: &Self, epsilon: T,
+            ulps: <T as Ulps>::U) -> bool {
+                $($(self.$m_col_element.approx_eq(&other.$m_col_element, epsilon, ulps))&&*)&&*
+            }
+        }
     }
 }
 

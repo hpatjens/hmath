@@ -5,3 +5,4 @@ authors = ["Henrik Patjens <hpatjens@gmail.com>"]
 
 [dependencies]
 num-traits = "0.2"
+float-cmp = "0.4.0"

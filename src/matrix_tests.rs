@@ -4,6 +4,8 @@ mod tests {
     use vector::*;
     use traits::*;
 
+    use std::f32;    
+
     type Mat2 = Matrix2<f32>;
     type Mat3 = Matrix3<f32>;
 
@@ -245,6 +247,26 @@ mod tests {
     }
 
     // --------------------------------------------------------------------------
+    // approx_eq
+    // --------------------------------------------------------------------------
+
+    #[test]
+    fn matrix3_approx_eq1() {
+        let     m1 = Mat3::from_components_col_major(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
+        let mut m2 = m1.clone();
+        m2.set_col_elem(1, 0, 4.0 + f32::EPSILON);
+        assert!(m1.approx_eq(&m2, f32::EPSILON, 0));
+    }
+
+    #[test]
+    fn matrix3_approx_eq2() {
+        let     m1 = Mat3::from_components_col_major(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
+        let mut m2 = m1.clone();
+        m2.set_col_elem(1, 0, 4.0 + 3.0*f32::EPSILON);
+        assert!(!m1.approx_eq(&m2, f32::EPSILON, 0));
+    }
+
+    // --------------------------------------------------------------------------
     // arrays
     // --------------------------------------------------------------------------
 
@@ -361,6 +383,6 @@ mod tests {
             3.0, -3.0,  1.0,
             1.0,  4.0, -4.0
         );
-        assert_eq!(m*m.inverse().unwrap(), Mat3::identity()); // TODO(henk): What?
+        assert!((m*m.inverse().unwrap()).approx_eq(&Mat3::identity(), f32::EPSILON, 2)); // TODO(henk): What?
     }
 }
