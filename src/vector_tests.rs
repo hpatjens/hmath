@@ -3,8 +3,8 @@ mod tests {
     use vector::*;
     use traits::*;
 
-    type Vec2  = Vector2<f32>;
-    type Vec3  = Vector3<f32>;
+    type Vec2 = Vector2<f32>;
+    type Vec3 = Vector3<f32>;
 
     // --------------------------------------------------------------------------
     //
@@ -294,6 +294,28 @@ mod tests {
     }
 
     // --------------------------------------------------------------------------
+    // as_array
+    // --------------------------------------------------------------------------
+
+    #[test]
+    fn vector2_as_array1() {
+        let v = Vec2::new(1.0, 2.0);
+        let a = v.as_array();
+        assert_eq!(v.x, a[0]);
+        assert_eq!(v.y, a[1]);
+    }
+
+    #[test]
+    fn vector2_as_array2() {
+        let mut v = Vec2::new(1.0, 2.0);
+        let a = v.as_array().clone();
+        v.x = 10.0;
+        v.y = 20.0;
+        assert_eq!(a[0], 1.0);
+        assert_eq!(a[1], 2.0);
+    }
+
+    // --------------------------------------------------------------------------
     //
     // Vector3
     //
@@ -509,8 +531,49 @@ mod tests {
         assert_eq!((&Vec3::new(1.0, 2.0, 3.0)).dot(&Vec3::new(3.0, 2.0, 1.0)), 10.0);
     }
 
+    // --------------------------------------------------------------------------
+    // as_array
+    // --------------------------------------------------------------------------
 
+    #[test]
+    fn vector3_as_array() {
+        let v = Vec3::new(1.0, 2.0, 3.0);
+        let a = v.as_array();
+        assert_eq!(v.x, a[0]);
+        assert_eq!(v.y, a[1]);
+        assert_eq!(v.z, a[2]);
+    }
 
+    // --------------------------------------------------------------------------
+    // elem
+    // --------------------------------------------------------------------------
+
+    #[test]
+    fn vector3_elem_val() {
+        let v = Vec3::new(1.0, 2.0, 3.0);
+        assert_eq!(v.elem(0), 1.0);
+        assert_eq!(v.elem(1), 2.0);
+        assert_eq!(v.elem(2), 3.0);
+    }
+
+    #[test]
+    fn vector3_elem_ref() {
+        let v = &Vec3::new(1.0, 2.0, 3.0);
+        assert_eq!(*v.elem(0), 1.0);
+        assert_eq!(*v.elem(1), 2.0);
+        assert_eq!(*v.elem(2), 3.0);
+    }
+
+    #[test]
+    fn vector3_elem_mut_ref() {
+        let ref mut v = Vec3::new(7.0, 8.0, 9.0);
+        *v.elem(0) = 7.0;
+        *v.elem(1) = 8.0;
+        *v.elem(2) = 9.0;
+        assert_eq!(*v.elem(0), 7.0);
+        assert_eq!(*v.elem(1), 8.0);
+        assert_eq!(*v.elem(2), 9.0);
+    }
 
 
 

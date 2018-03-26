@@ -6,6 +6,7 @@ pub trait Base
     : Num
     + Copy
     + AddAssign
+    + ::std::fmt::Debug // TODO(henk): Remove this
     + SubAssign
     + MulAssign
     + DivAssign
@@ -57,4 +58,37 @@ pub trait CwMax<RHS = Self> {
 pub trait CwAbs<RHS = Self> {
     type Output;
     fn cw_abs(self) -> Self::Output;
+}
+
+pub trait Elem<T> {
+    type Output;
+    fn elem(self, index: T) -> Self::Output;
+}
+
+pub trait ElemMut<T> {
+    type Output;
+    fn elem_mut(self, index: T) -> Self::Output;
+}
+
+pub trait AsArray {
+    type Output;
+    fn as_array(self) -> Self::Output; // TODO(henk): How to design this in a way that defined the output as an array?
+}
+
+pub trait MatrixAccess {
+    type Output;
+    fn col_elem(self, col_index: usize, elem_index: usize) -> Self::Output;
+    fn row_elem(self, row_index: usize, elem_index: usize) -> Self::Output;
+}
+
+pub trait MatrixAccessRef<'a> {
+    type Output;
+    fn col_elem_ref(self, col_index: usize, elem_index: usize) -> &'a Self::Output;
+    fn row_elem_ref(self, row_index: usize, elem_index: usize) -> &'a Self::Output;
+}
+
+pub trait MatrixAccessMut<'a> {
+    type Output;
+    fn col_elem_mut(self, col_index: usize, elem_index: usize) -> &'a mut Self::Output;
+    fn row_elem_mut(self, row_index: usize, elem_index: usize) -> &'a mut Self::Output;
 }
