@@ -143,7 +143,6 @@ macro_rules! implement_matrix {
             }
         }
 
-        // TODO(henk): Add MatrixAccessRef und MatrixAccessMut
         impl<T: Base> MatrixAccess for $matrix_type<T> {
             type Output = T;
             #[inline]
@@ -385,4 +384,152 @@ impl<T: Base + Neg<Output=T>> Matrix4<T> {
     }
 }
 
+impl<T: BaseFloat> Matrix3<T> {
+    pub fn new_normal_matrix(model_matrix: &Matrix3<T>) -> Option<Self> {
+        if let Some(inv) = model_matrix.inverse() {
+            Some(Matrix3::from(inv.transpose()))
+        } else {
+            None
+        }
+    }
+}
 
+impl<T: BaseFloat> From<Matrix4<T>> for Matrix3<T> {
+    fn from(m: Matrix4<T>) -> Self {
+        Matrix3::from_components_row_major(
+            m.m00, m.m01, m.m02,
+            m.m10, m.m11, m.m12,
+            m.m20, m.m21, m.m22
+        )
+    }
+}
+
+impl<T: BaseFloat> Matrix4<T> {
+    pub fn new_translation(x: T, y: T, z: T) -> Self {
+        Matrix4::from_components_row_major(
+            T::one() , T::zero(), T::zero(), x,
+            T::zero(), T::one() , T::zero(), y,
+            T::zero(), T::zero(), T::one() , z,
+            T::zero(), T::zero(), T::zero(), T::one()
+        )
+    }
+
+    pub fn new_translation_from_vector(v: Vector3<T>) -> Self {
+        Self::new_translation(v.x, v.y, v.z)
+    }
+
+    pub fn new_scale(x: T, y: T, z: T) -> Self {
+        Matrix4::from_components_row_major(
+            x        , T::zero(), T::zero(), T::zero(),
+            T::zero(), y        , T::zero(), T::zero(),
+            T::zero(), T::zero(), z        , T::zero(),
+            T::zero(), T::zero(), T::zero(), T::one(),
+        )
+    }
+
+    pub fn new_scale_from_vector(v: Vector3<T>) -> Self {
+        Self::new_scale(v.x, v.y, v.z)
+    }
+
+    pub fn new_scale_uniform(s: T) -> Self {
+        Self::new_scale(s, s, s)
+    }
+
+    pub fn new_rotation(axis: Vector3<T>, angle: T) -> Self {
+        let cos_a = T::cos(angle);
+        let sin_a = T::sin(angle);
+        let k = T::one() - cos_a;
+        Matrix4::from_components_row_major(
+            axis.x * axis.x * k + cos_a         , axis.x * axis.y * k - axis.z * sin_a, axis.x * axis.z * k + axis.y * sin_a, T::zero(),
+            axis.y * axis.x * k + axis.z * sin_a, axis.y * axis.y * k + cos_a         , axis.y * axis.z * k - axis.x * sin_a, T::zero(),
+            axis.z * axis.x * k - axis.y * sin_a, axis.z * axis.y * k + axis.x * sin_a, axis.z * axis.z * k + cos_a         , T::zero(),
+            T::zero()                           , T::zero()                           , T::zero()                           , T::one()
+        )
+    }
+
+    pub fn new_rotation_x(angle: T) -> Self {
+        Matrix4::from_components_row_major(
+            T::one() , T::zero()    ,  T::zero()    , T::zero(),
+            T::zero(), T::cos(angle), -T::sin(angle), T::zero(),
+            T::zero(), T::sin(angle),  T::cos(angle), T::zero(),
+            T::zero(), T::zero()    ,  T::zero()    , T::one()
+        )
+    }    
+
+    pub fn new_rotation_y(angle: T) -> Self {
+        Matrix4::from_components_row_major(
+             T::cos(angle), T::zero(), T::sin(angle), T::zero(),
+             T::zero()    , T::one() , T::zero()    , T::zero(),
+            -T::sin(angle), T::zero(), T::cos(angle), T::zero(),
+             T::zero()    , T::zero(), T::zero()    , T::one()
+        )
+    }
+
+    pub fn new_rotation_z(angle: T) -> Self {
+        Matrix4::from_components_row_major(
+            T::cos(angle), -T::sin(angle), T::zero(), T::zero(),
+            T::sin(angle),  T::cos(angle), T::zero(), T::zero(),
+            T::zero()    ,  T::zero()    , T::one() , T::zero(),
+            T::zero()    ,  T::zero()    , T::zero(), T::one()
+        )
+    }
+
+    pub fn new_perspective_from_bounds(left: T, right: T, bottom: T, top: T, z_near: T, z_far: T) -> Self {
+        let two = T::one() + T::one();
+        let w = right - left;
+        let h = top - bottom;
+        let d = z_far - z_near;
+        Matrix4::from_components_row_major(
+            two * z_near / w, T::zero()       , (right + left) / w   , T::zero(),
+            T::zero()       , two * z_near / h, (top + bottom) / h   , T::zero(),
+            T::zero()       , T::zero()       , -(z_far + z_near) / d, -two * z_far*z_near / d,
+            T::zero()       , T::zero()       , -T::one()            , T::zero()
+        )
+    }
+
+    pub fn new_perspective_from_fov(fov: T, aspect: T, z_near: T, z_far: T) -> Self {
+        let pi = T::from(::std::f32::consts::PI).unwrap();
+        let circ = T::from(360.0).unwrap();
+        let right = z_near * T::tan(fov * pi / circ);
+        let left = -right;
+        let top = right / aspect;
+        let bottom = -top;
+        Self::new_perspective_from_bounds(left, right, bottom, top, z_near, z_far)
+    }
+
+    pub fn new_orthographic_from_bounds(left: T, right: T, bottom: T, top: T, z_near: T, z_far: T) -> Self {
+        let two = T::one() + T::one();
+        let w = right - left;
+        let h = top - bottom;
+        let d = z_far - z_near;
+        Matrix4::from_components_row_major(
+            two / w  , T::zero(), T::zero(), -(right + left) / w,
+            T::zero(), two / h  , T::zero(), -(top + bottom) / h,
+            T::zero(), T::zero(), -two / d , -(z_far + z_near) / d,
+            T::zero(), T::zero(), T::zero(), T::one()
+        )
+    }
+
+    pub fn new_orthographic_from_dimensions(width: T, height: T, z_near: T, z_far: T) -> Self {
+        let two = T::one() + T::one();
+        let d = z_far - z_near;
+        Matrix4::from_components_row_major(
+            two / width, T::zero()   , T::zero(), T::zero(),
+            T::zero()  , two / height, T::zero(), T::zero(),
+            T::zero()  , T::zero()   , -two / d , -(z_far + z_near) / d,
+            T::zero()  , T::zero()   , T::zero(), T::one()
+        )
+    }
+
+    pub fn new_look_at(eye: Vector3<T>, target: Vector3<T>, up: Vector3<T>) -> Self {
+        let f = (target - eye).normalize();
+        let s = f.cross(up).normalize();
+        let u = s.cross(f).normalize();
+        Matrix4::from_components_row_major(
+             s.x      ,  s.y     ,  s.z     , -(s.x * eye.x + s.y * eye.y + s.z * eye.z),
+             u.x      ,  u.y     ,  u.z     , -(u.x * eye.x + u.y * eye.y + u.z * eye.z),
+            -f.x      , -f.y     , -f.z     ,  (f.x * eye.x + f.y * eye.y + f.z * eye.z),
+             T::zero(), T::zero(), T::zero(), T::one()
+        )
+    }
+}
