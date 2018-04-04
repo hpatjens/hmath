@@ -8,9 +8,11 @@ mod tests {
 
     type Mat2 = Matrix2<f32>;
     type Mat3 = Matrix3<f32>;
+    type Mat4 = Matrix4<f32>;
 
     type Vec2 = Vector2<f32>;
     type Vec3 = Vector3<f32>;
+    type Vec4 = Vector4<f32>;
 
     // --------------------------------------------------------------------------
     //
@@ -373,6 +375,31 @@ mod tests {
     }
 
     // --------------------------------------------------------------------------
+    // ApproxEq
+    // --------------------------------------------------------------------------
+
+    #[test]
+    fn matrix3_approx_eq() {
+        let m1 = Mat3::from_components_row_major(
+            2.0,  5.0,  2.0,
+            3.0, -3.0,  1.0,
+            1.0,  4.0, -4.0
+        );
+        let m2 = Mat3::from_components_row_major(
+            2.0,  5.0,  2.000000001,
+            3.0, -3.0,  1.0,
+            1.0,  4.00000001, -4.0
+        );
+        let m3 = Mat3::from_components_row_major(
+            3.0,  5.0,  2.0,
+            3.0, -3.0,  1.0,
+            1.0,  4.0, -6.0
+        );
+        assert!(m1.approx_eq(&m2, ::std::f32::EPSILON, 2));
+        assert!(!m1.approx_eq(&m3, ::std::f32::EPSILON, 2));
+    }
+
+    // --------------------------------------------------------------------------
     // inverse
     // --------------------------------------------------------------------------
 
@@ -384,5 +411,76 @@ mod tests {
             1.0,  4.0, -4.0
         );
         assert!((m*m.inverse().unwrap()).approx_eq(&Mat3::identity(), f32::EPSILON, 2)); // TODO(henk): What?
+    }
+
+
+    // --------------------------------------------------------------------------
+    //
+    // Matrix4
+    //
+    // --------------------------------------------------------------------------
+
+    #[test]
+    fn matrix4_inverse0() {
+        assert!(Mat4::identity().inverse().unwrap().approx_eq(&Mat4::identity(), ::std::f32::EPSILON, 2));
+    }
+
+    #[test]
+    fn matrix4_inverse1() {
+        let m = Mat4::from_components_row_major(
+            1.0, -2.0, 3.0, 4.0,
+            -2.0, 3.0, 4.0, 5.0,
+            3.0, 4.0, 5.0, 6.0,
+            4.0, 5.0, 6.0, 7.0
+        );
+        let result = Mat4::from_components_row_major(
+            0.0, -4.0/16.0, 8.0/16.0, -4.0/16.0,
+            -4.0/16.0, 0.0, 12.0/16.0, -8.0/16.0,
+            8.0/16.0, 12.0/16.0, -160.0/16.0, 124.0/16.0,
+            -4.0/16.0, -8.0/16.0, 124.0/16.0, -96.0/16.0
+        );
+        assert!(m.inverse().unwrap().approx_eq(&result, f32::EPSILON, 2));
+    }
+
+
+    #[test]
+    fn matrix4_inverse2() {
+        let m = Mat4::from_components_row_major(
+            1.0, -2.0, 3.0, 4.0,
+            -2.0, 3.0, 4.0, 5.0,
+            3.0, 4.0, 5.0, 6.0,
+            4.0, 5.0, 6.0, 7.0
+        );
+        assert!((m*m.inverse().unwrap()).approx_eq(&Mat4::identity(), f32::EPSILON, 2));
+    }
+
+    #[test]
+    fn matrix4_inverse3() {
+        let m = Mat4::from_components_row_major(
+            1.0, 0.0, 12.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 4.0, -136.0,
+            0.0, -2.0, 0.0, 1.0
+        );
+        let result = Mat4::from_components_row_major(
+            1.0, -3264.0/4.0, -12.0/4.0, -1632.0/4.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 272.0/4.0, 1.0/4.0, 136.0/4.0,
+            0.0, 8.0/4.0, 0.0, 1.0
+        );
+        println!("m ?= result ... {:?} ?= {:?}", m.inverse().unwrap(), result);
+        assert!(m.inverse().unwrap().approx_eq(&result, ::std::f32::EPSILON, 2));
+    }
+
+    #[test]
+    fn matrix4_inverse4() {
+        let v = Mat4::new_look_at(Vec3::new(0.5, 1.0, 0.5), Vec3::zero(), Vec3::new(0.0, 1.0, 0.0));
+        let p = Mat4::new_orthographic_from_dimensions(100.0, 80.0, -1.0, 1.0);
+        let x = Vec4::new(0.6, 0.1, 3.3, 1.0);
+        println!("p*v = {:?}", p*v);
+        let u = (p*v*x).wdiv();
+        let r = (p*v).inverse().unwrap()*Vec4::new(u.x, u.y, u.z, 1.0);
+        println!("{:?} -> {:?}", x, r);
+        assert!(x.approx_eq(&r, 2.0*::std::f32::EPSILON, 3));
     }
 }

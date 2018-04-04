@@ -4,6 +4,8 @@ use std::mem;
 
 use traits::*;
 
+pub use float_cmp::{Ulps,ApproxEq};
+
 macro_rules! implement_vector {
     ($type:ident {
         dim: $dim:expr,
@@ -121,6 +123,15 @@ macro_rules! implement_vector {
         }
 
         
+        impl<T: BaseFloat> ApproxEq for $type<T> 
+            where T: ApproxEq<Flt=T>
+        {
+            type Flt = T;
+            #[inline]
+            fn approx_eq(&self, other: &Self, epsilon: T, ulps: <T as Ulps>::U) -> bool {
+                $(self.$member.approx_eq(&other.$member, epsilon, ulps))&&*
+            }
+        }
 
         //
         // IMPLEMENT BINARY OPERATORS
@@ -287,3 +298,9 @@ implement_binary_operator!(Cross<Vector3<T>> for Vector3<T>,
         )
     }
 );
+
+impl<T: Base> Vector4<T> {
+    pub fn wdiv(&self) -> Vector3<T> {
+        Vector3::new(self.x/self.w, self.y/self.w, self.z/self.w)
+    }
+}

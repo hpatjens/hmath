@@ -78,6 +78,11 @@ pub trait AsArray {
     fn as_array(self) -> Self::Output; // TODO(henk): How to design this in a way that defined the output as an array?
 }
 
+pub trait AsArrays {
+    type Output;
+    fn as_arrays(self) -> Self::Output; // TODO(henk): How to design this in a way that defined the output as an array?
+}
+
 pub trait MatrixAccess {
     type Output;
     fn col_elem(self, col_index: usize, elem_index: usize) -> Self::Output;
