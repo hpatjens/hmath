@@ -2,7 +2,9 @@
 name = "hmath"
 version = "0.1.0"
 authors = ["Henrik Patjens <hpatjens@gmail.com>"]
+edition = "2018"
 
 [dependencies]
+serde = { version = "1.0.91", features = ["derive"] }
 num-traits = "0.2"
 float-cmp = "0.4.0"

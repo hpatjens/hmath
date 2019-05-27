@@ -1,8 +1,14 @@
-use std::ops::{Mul,Neg};
-use std::mem;
+use std::{
+    ops::{Mul,Neg},
+    mem,
+};
 
-use traits::*;
-use vector::*;
+use crate::{
+    traits::*,
+    vector::*,
+};
+
+use serde::{Serialize, Deserialize};
 
 pub use float_cmp::{Ulps,ApproxEq};
 
@@ -26,7 +32,7 @@ macro_rules! implement_matrix {
         }
     }) => {
         #[repr(C)]
-        #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
+        #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
         pub struct $matrix_type<T: Base> {
             $($(pub $m_col_element: T),*),*
         }

@@ -1,8 +1,12 @@
-use std::ops::{Add,AddAssign,Sub,SubAssign,Mul,MulAssign,Div,DivAssign,Neg};
-use num_traits::Signed;
-use std::mem;
+use std::{
+    ops::{Add,AddAssign,Sub,SubAssign,Mul,MulAssign,Div,DivAssign,Neg},
+    mem,
+};
 
-use traits::*;
+use crate::traits::*;
+
+use num_traits::Signed;
+use serde::{Serialize, Deserialize};
 
 pub use float_cmp::{Ulps,ApproxEq};
 
@@ -14,7 +18,7 @@ macro_rules! implement_vector {
         //
         // DEFINE THE TYPE
         //
-        #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
+        #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
         pub struct $type<T> where T: Base {
             $(pub $member: T),*
         }
